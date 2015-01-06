@@ -1,0 +1,15 @@
+---
+- name: Grab cmake
+  command: >
+    wget http://www.cmake.org/files/v3.0/cmake-3.0.2.tar.gz
+    creates=cmake-3.0.2.tar.gz
+
+- name: Unpack cmake
+  command: >
+    tar xzf cmake-3.0.2.tar.gz
+    creates=cmake-3.0.2
+
+- name: Install cmake
+  shell: >
+    ./bootstrap; make; make install
+    chdir=cmake-3.0.2

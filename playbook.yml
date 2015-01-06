@@ -1,0 +1,85 @@
+# Use the ec2 module to create a new host and then add
+# it to a special "ec2hosts" group.
+- hosts: localhost
+  connection: local
+  gather_facts: False
+  vars:
+    ec2_access_key: "ANALPHANUMERICSTRING"
+    ec2_secret_key: "l3didyoureallythinkIwouldpostthisone+C0T3"
+    keypair: "my_key_name"
+    instance_type: "m3.medium"
+    # http://cloud-images.ubuntu.com/releases/14.04/release/
+    image: "ami-8caa1ce4"
+    group: "default"
+    region: "us-east-1"
+    zone: "us-east-1d"
+  tasks:
+    - name: make one instance
+      ec2: image={{ image }}
+           instance_type={{ instance_type }}
+           aws_access_key={{ ec2_access_key }}
+           aws_secret_key={{ ec2_secret_key }}
+           keypair={{ keypair }}
+           instance_tags='{"dashboard":"meshkit"}'
+           region={{ region }}
+           group={{ group }}
+           wait=true
+      register: ec2_info
+    - debug: var=ec2_info
+    - debug: var=item
+      with_items: ec2_info.instance_ids
+    - add_host: hostname={{ item.public_ip }} groupname=ec2hosts
+      with_items: ec2_info.instances
+    - name: wait for instances to listen on port:22
+      wait_for:
+        state=started
+        host={{ item.public_dns_name }}
+        port=22
+      with_items: ec2_info.instances
+
+# Connect to the node and gather facts,
+# including the instance-id. These facts
+# are added to inventory hostvars for the
+# duration of the playbook's execution
+# Typical "provisioning" tasks would go in
+# this playbook.
+- hosts: ec2hosts
+  gather_facts: True
+  user: ubuntu
+  sudo: True
+  tasks:
+    # fetch instance data from the metadata servers in ec2
+    - ec2_facts:
+    # show all known facts for this host
+    - debug: var=hostvars[inventory_hostname]
+    # just show the instance-id
+    - debug: msg="{{ hostvars[inventory_hostname]['ansible_ec2_instance_id'] }}"
+
+- hosts: ec2hosts
+  sudo: True
+  user: ubuntu
+  tasks:
+    - include: install-essentials.yml
+    - include: install-cmake-3.0.2.yml
+    - include: build-itk.yml
+
+
+# Using the instanceid, call the ec2 module
+# locally to remove the instance by declaring
+# its state is "absent"
+- hosts: ec2hosts
+  gather_facts: True
+  connection: local
+  vars:
+    ec2_access_key: "ANALPHANUMERICSTRING"
+    ec2_secret_key: "l3didyoureallythinkIwouldpostthisone+C0T3"
+    region: "us-east-1"
+  tasks:
+    - name: destroy all instances
+      ec2: state='absent'
+           aws_access_key={{ ec2_access_key }}
+           aws_secret_key={{ ec2_secret_key }}
+           region={{ region }}
+           instance_ids={{ item }}
+           wait=true
+      with_items: hostvars[inventory_hostname]['ansible_ec2_instance_id']

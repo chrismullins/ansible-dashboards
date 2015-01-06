@@ -1,0 +1,30 @@
+---
+- name: Clone ITK
+  command: >
+    git clone git://itk.org/ITK.git
+    creates=ITK
+
+#- name: Change into the right branch
+#  command: >
+#    git checkout a-specific-branch
+#    chdir=ITK
+
+- name: Create the build directory
+  command: >
+    mkdir itk-build
+    creates=itk-build
+
+- name: Configure ITK
+  command: >
+    cmake ../ITK
+    chdir=itk-build
+
+- name: Build ITK
+  command: >
+    make
+    chdir=itk-build
+
+- name: Submit a dashboard
+  command: >
+    ctest -d Experimental
+    chdir=itk-build
