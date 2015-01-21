@@ -1,15 +1,9 @@
 ---
-- name: Install git
-  apt: pkg=git update_cache=yes
-
-- name: Install gcc
-  apt: pkg=gcc
-
-- name: Install g++
-  apt: pkg=g++
-
-- name: Install make
-  apt: pkg=make
-
-- name: Install vim so you can edit things
-  apt: pkg=vim
+- name: Install build essentials
+  sudo: yes
+  apt: name={{ item }} state=present update_cache=yes
+  with_items:
+    - git
+    - gcc
+    - g++
+    - make
