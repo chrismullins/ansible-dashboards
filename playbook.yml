@@ -20,7 +20,7 @@
            aws_access_key={{ ec2_access_key }}
            aws_secret_key={{ ec2_secret_key }}
            keypair={{ keypair }}
-           instance_tags='{"dashboard":"meshkit"}'
+           instance_tags='{"dashboard":"ITK"}'
            region={{ region }}
            group={{ group }}
            wait=true
